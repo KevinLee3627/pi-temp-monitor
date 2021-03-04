@@ -1,9 +1,9 @@
 from gpiozero import CPUTemperature
-from pprint import pprint
 from tabulate import tabulate
+from math import floor
 import numpy as np
 import plotext as plt
-import time, math
+import time
 
 cpu = CPUTemperature()
 
@@ -20,7 +20,7 @@ colors = {
 }
 
 def roundNum(num, digits):
-    return math.floor(num * 10 ** digits) / (10 ** digits)
+    return floor(num * 10 ** digits) / (10 ** digits)
 
 def CtoF(temp):
     fahrenheit = (temp + 1.8) + 32
