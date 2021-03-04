@@ -1,10 +1,11 @@
 # pi-temp-monitor
 
-Monitors temperature of Raspberry Pi, including real-time graph in the terminal.
+Monitors temperature of Raspberry Pi with real-time graph in the terminal. Can adjust frequency of update and length of time to record, and will resize plot when terminal is resized as well.
 
 Packages used:
-- [plotext](https://github.com/piccolomo/plotext)
+- [termplotlib](https://github.com/nschloe/termplotlib/)
 - [python-tabulate](https://github.com/astanin/python-tabulate)
 - [gpiozero](https://github.com/gpiozero/gpiozero)
 - [numpy](https://numpy.org/)
-- math, time
+- math, time, shutil
+
