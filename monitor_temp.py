@@ -2,11 +2,19 @@ from gpiozero import CPUTemperature
 from tabulate import tabulate
 from math import floor
 import numpy as np
-import plotext as plt
+import termplotlib as tpl
 import time
+import shutil
+
+def roundNum(num, digits):
+    return floor(num * 10 ** digits) / (10 ** digits)
+
+def CtoF(temp):
+    fahrenheit = (temp + 1.8) + 32
+    rounded = roundNum(fahrenheit, 3)
+    return str(rounded)
 
 cpu = CPUTemperature()
-
 colors = {
     'HEADER': '\033[95m',
     'OKBLUE': '\033[94m',
@@ -19,43 +27,15 @@ colors = {
     'UNDERLINE': '\033[4m',
 }
 
-def roundNum(num, digits):
-    return floor(num * 10 ** digits) / (10 ** digits)
-
-def CtoF(temp):
-    fahrenheit = (temp + 1.8) + 32
-    rounded = roundNum(fahrenheit, 3)
-    return str(rounded)
-
-
-def plotTemp(temps, times, tickRate, minutes):
-    plt.clear_plot()
-    plt.clear_terminal()
-
-    plt.plot(times, temps, line_color='green')
-    plt.xlim(times[0], times[0]+(60*minutes))
-
-    plt.xlabel('Time (s)')
-    plt.ylabel('Temp (\N{DEGREE SIGN}C)')
-    plt.title('CPU Temperature in last 5 minutes')
-
-    plt.axes_color('black')
-    plt.canvas_color('black')
-    plt.ticks_color('basil')
-    plt.frame(True)
-    plt.height(40)
-
-    plt.show()
-    return
-
 times = [0]
 temps = [cpu.temperature]
 
+
 while True:
-    #come up with better variable name for tickRate
     tickRate = 2 #takes data every {tickRate} seconds
     minutes = 5
     numPoints = int(60 / tickRate * minutes)
+    width, height = shutil.get_terminal_size()
 
     if len(temps) > numPoints:
         temps = temps[-numPoints:]
@@ -63,11 +43,8 @@ while True:
 
     temps.append(cpu.temperature)
     times.append(times[-1] + tickRate)
-    plotTemp(temps, times, tickRate, minutes)
-    
-    averageTemp = roundNum(np.average(temps), 3)
 
-    output = f""
+    averageTemp = roundNum(np.average(temps), 3)
 
     cpuTempColor = ''
     if cpu.temperature < 50:
@@ -80,19 +57,33 @@ while True:
         cpuTempColor = colors['FAIL'] + colors['BOLD']
 
     table = [[
-        f"{colors['OKGREEN']}{str(cpu.temperature)}\N{DEGREE SIGN}C / {CtoF(cpu.temperature)}\N{DEGREE SIGN}F\n",
+        f"{cpuTempColor}{str(cpu.temperature)}\N{DEGREE SIGN}C / {CtoF(cpu.temperature)}\N{DEGREE SIGN}F\n",
         f"{colors['OKGREEN']}{averageTemp} / {CtoF(averageTemp)}\N{DEGREE SIGN}F\n",
         f"{colors['OKGREEN']}{np.amax(temps)} / {CtoF(np.amax(temps))}\N{DEGREE SIGN}F\n",
         f"{colors['OKGREEN']}{np.amin(temps)} / {CtoF(np.amin(temps))}\N{DEGREE SIGN}F"
     ]]
 
     headers = [
-        f"{cpuTempColor}CPU TEMPERATURE",
+        f"{colors['OKGREEN']}CPU TEMPERATURE",
         f"{colors['OKGREEN']}Average Temperature (last {minutes} minutes)",
         f"{colors['FAIL']}Peak Temperature (last {minutes} minutes)",
         f"{colors['OKCYAN']}Lowest Temperature (last {minutes} minutes){colors['OKGREEN']}", #OKGREEN at end is to make sure table lines are green, not cyan
     ]
 
+    print('\n')
+    fig = tpl.figure()
+    plotConfig = {
+        'width': width-2,
+        'height': height-5,
+        'label': 'CPU Temperature',
+        'xlabel': 'Time (s)',
+        'xlim': [times[0], times[-1:]],
+        'ylim': [np.amin(temps)-2, np.amax(temps)+2],
+        'title': f"CPU Temperature over last {minutes} minutes",
+    }
+    fig.plot(times, temps, **plotConfig)
+    fig.show()
+    # width=width-2, height=height-5, label='CPU Temperature', xlabel='Time (s)', , ylim=[np.amin(temps)-2, np.amax(temps)+2], title='CPU Temperature over last 5 minutes'
     print('\n')
     print(tabulate(table, headers=headers))
 
